@@ -1,5 +1,7 @@
 # godaddy-cname
 
+![godaddy-cname demo](godaddy-demo.gif)
+
 Manage GoDaddy CNAME DNS records from the terminal.
 
 A bash reimplementation of [tui-godaddy-cname](https://github.com/doohinkus/tui-godaddy).
