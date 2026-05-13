@@ -8,6 +8,8 @@ A bash reimplementation of [tui-godaddy-cname](https://github.com/doohinkus/tui-
 
 ## Usage
 
+# Bash / \*nix environment - see Requirements
+
 ```bash
 chmod +x godaddy-cname.sh
 ./godaddy-cname.sh
@@ -20,15 +22,25 @@ cp .example.env .env
 # edit .env with your GoDaddy API key and secret
 ```
 
+# Docker (no \ \*nix required)
+
+```bash
+# Build
+docker build -t godaddy-cname .
+
+# Run with .env mounted
+docker run -it --rm -v "$PWD/.env:/app/.env" godaddy-cname
+```
+
 ## Configuration
 
 Set these environment variables (or create a `.env` file in the script directory):
 
-| Variable | Description | Default |
-|---|---|---|
-| `GODADDY_API_KEY` | GoDaddy API key | — |
-| `GODADDY_API_SECRET` | GoDaddy API secret | — |
-| `GODADDY_BASE_URL` | API base URL | `https://api.godaddy.com` |
+| Variable             | Description        | Default                   |
+| -------------------- | ------------------ | ------------------------- |
+| `GODADDY_API_KEY`    | GoDaddy API key    | —                         |
+| `GODADDY_API_SECRET` | GoDaddy API secret | —                         |
+| `GODADDY_BASE_URL`   | API base URL       | `https://api.godaddy.com` |
 
 Get credentials at: https://developer.godaddy.com/keys
 
@@ -45,6 +57,7 @@ Get credentials at: https://developer.godaddy.com/keys
 
 ## Requirements
 
+- Docker (recommended — works on any OS), **or**
 - bash 3+
 - curl
 - jq (optional — falls back to grep/sed for JSON parsing)
@@ -53,9 +66,9 @@ Get credentials at: https://developer.godaddy.com/keys
 
 Uses the [GoDaddy REST API](https://developer.godaddy.com/doc/endpoint/domains):
 
-| Operation | Method | Endpoint |
-|---|---|---|
-| List domains | GET | `/v1/domains` |
-| Get CNAME records | GET | `/v1/domains/{domain}/records/CNAME` |
-| Add/update record | PATCH | `/v1/domains/{domain}/records` |
-| Delete record | GET + PUT | GET all CNAMEs, filter, PUT replacement |
+| Operation         | Method    | Endpoint                                |
+| ----------------- | --------- | --------------------------------------- |
+| List domains      | GET       | `/v1/domains`                           |
+| Get CNAME records | GET       | `/v1/domains/{domain}/records/CNAME`    |
+| Add/update record | PATCH     | `/v1/domains/{domain}/records`          |
+| Delete record     | GET + PUT | GET all CNAMEs, filter, PUT replacement |
