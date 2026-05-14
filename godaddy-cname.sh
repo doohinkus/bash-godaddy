@@ -5,6 +5,7 @@ set -euo pipefail
 # godaddy-cname.sh - Manage GoDaddy CNAME DNS Records
 # ============================================================
 # Environment:  GODADDY_API_KEY, GODADDY_API_SECRET, GODADDY_BASE_URL
+# Profiles:     profiles/<name>.env for multi-account support
 # Dependencies: bash 3+, curl
 # Optional:     jq (preferred for JSON parsing)
 # ============================================================
@@ -25,6 +26,14 @@ source "$SCRIPT_DIR/lib/credentials.sh"
 : "${GODADDY_API_KEY:=}"
 : "${GODADDY_API_SECRET:=}"
 : "${GODADDY_BASE_URL:=https://api.godaddy.com}"
+
+ACTIVE_PROFILE=""
+if [ -d "profiles" ]; then
+  ACTIVE_PROFILE=$(select_profile)
+  if [ -n "$ACTIVE_PROFILE" ]; then
+    apply_profile "$ACTIVE_PROFILE"
+  fi
+fi
 
 AUTH="Authorization: sso-key $GODADDY_API_KEY:$GODADDY_API_SECRET"
 
@@ -63,7 +72,7 @@ fetch_domains() {
   printf '%s\n' "${domains[@]}" >"/tmp/godaddy_domains_$$"
 
   clear_screen
-  print_header "Select a Domain"
+  print_header "Select a Domain" "$ACTIVE_PROFILE"
   PS3="Enter choice [1-${#domains[@]}]: "
   select domain in "${domains[@]}" "Quit"; do
     if [ -z "$domain" ]; then
@@ -85,7 +94,7 @@ manage_records() {
 
   while true; do
     clear_screen
-    print_header "${RECORD_TYPE} Records: $domain"
+    print_header "${RECORD_TYPE} Records: $domain" "$ACTIVE_PROFILE"
 
     echo -e "${C}Fetching records...${NC}" >&2
     local response
@@ -139,7 +148,7 @@ manage_records() {
 add_record() {
   local domain="$1"
   clear_screen
-  print_header "Add ${RECORD_TYPE} Record"
+  print_header "Add ${RECORD_TYPE} Record" "$ACTIVE_PROFILE"
 
   echo -n "Subdomain (e.g., www): "
   read -r name
@@ -186,7 +195,7 @@ edit_record() {
   [ "$count" -eq 0 ] && { echo -e "${R}No records to edit${NC}" >&2; pause; return 1; }
 
   clear_screen
-  print_header "Edit ${RECORD_TYPE} Record"
+  print_header "Edit ${RECORD_TYPE} Record" "$ACTIVE_PROFILE"
 
   printf "${BO}%-4s %-22s %-42s %-6s${NC}\n" "#" "Name" "Data" "TTL"
   printf "${GR}%-74s${NC}\n" "──────────────────────────────────────────────────────────"
@@ -261,7 +270,7 @@ delete_record() {
   [ "$count" -eq 0 ] && { echo -e "${R}No records to delete${NC}" >&2; pause; return 1; }
 
   clear_screen
-  print_header "Delete ${RECORD_TYPE} Record"
+  print_header "Delete ${RECORD_TYPE} Record" "$ACTIVE_PROFILE"
 
   printf "${BO}%-4s %-22s %-42s %-6s${NC}\n" "#" "Name" "Data" "TTL"
   printf "${GR}%-74s${NC}\n" "──────────────────────────────────────────────────────────"
@@ -315,7 +324,7 @@ delete_record() {
 
 main() {
   clear_screen
-  print_header "GoDaddy CNAME Manager"
+  print_header "GoDaddy CNAME Manager" "$ACTIVE_PROFILE"
   echo -e "Base URL: ${GR}$GODADDY_BASE_URL${NC}"
   echo
 

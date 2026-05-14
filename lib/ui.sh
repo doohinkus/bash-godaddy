@@ -10,8 +10,13 @@ clear_screen() {
 
 print_header() {
   local title="$1"
+  local profile="${2:-}"
   echo
-  echo -e "${BO}${P}=== $title ===${NC}"
+  if [ -n "$profile" ]; then
+    echo -e "${BO}${P}=== $title [$profile] ===${NC}"
+  else
+    echo -e "${BO}${P}=== $title ===${NC}"
+  fi
   echo
 }
 

@@ -1,6 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read `specs/002-txt-record-management/plan.md`
+shell commands, and other important information, read `specs/003-multi-profile-credentials/spec.md`.
+For the implementation plan, read `specs/003-multi-profile-credentials/plan.md`.
 <!-- SPECKIT END -->
 
 # Project: bash-godaddy
