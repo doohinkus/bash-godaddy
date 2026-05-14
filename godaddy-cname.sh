@@ -28,6 +28,8 @@ source "$SCRIPT_DIR/lib/credentials.sh"
 
 AUTH="Authorization: sso-key $GODADDY_API_KEY:$GODADDY_API_SECRET"
 
+RECORD_TYPE="CNAME"
+
 cleanup() { rm -f /tmp/godaddy_*_$$; printf "${NC}"; }
 trap cleanup EXIT INT TERM
 
@@ -83,11 +85,11 @@ manage_records() {
 
   while true; do
     clear_screen
-    print_header "CNAME Records: $domain"
+    print_header "${RECORD_TYPE} Records: $domain"
 
     echo -e "${C}Fetching records...${NC}" >&2
     local response
-    response=$(api_get "/v1/domains/$domain/records/CNAME")
+    response=$(api_get "/v1/domains/$domain/records/$RECORD_TYPE")
     check_api_error "$response" || { pause; return 2; }
 
     local count
@@ -95,9 +97,9 @@ manage_records() {
     echo "$response" >"/tmp/godaddy_records_${domain}_$$"
 
     if [ "$count" -eq 0 ]; then
-      echo -e "${Y}No CNAME records found.${NC}"
+      echo -e "${Y}No ${RECORD_TYPE} records found.${NC}"
     else
-      printf "${BO}%-4s %-22s %-42s %-6s${NC}\n" "#" "Name" "Target" "TTL"
+      printf "${BO}%-4s %-22s %-42s %-6s${NC}\n" "#" "Name" "Data" "TTL"
       printf "${GR}%-74s${NC}\n" "──────────────────────────────────────────────────────────"
       for ((i = 0; i < count; i++)); do
         local name data ttl
@@ -112,7 +114,7 @@ manage_records() {
     echo
     echo -e "${BO}Actions:${NC}"
     echo -e "  ${G}[a]${NC} Add     ${G}[e]${NC} Edit    ${G}[d]${NC} Delete"
-    echo -e "  ${G}[r]${NC} Refresh ${G}[b]${NC} Back    ${G}[q]${NC} Quit"
+    echo -e "  ${G}[t]${NC} Type    ${G}[r]${NC} Refresh ${G}[b]${NC} Back    ${G}[q]${NC} Quit"
     echo
     echo -n "Choice: "
     read -r action
@@ -121,6 +123,7 @@ manage_records() {
       [aA]) add_record "$domain" ;;
       [eE]) edit_record "$domain" ;;
       [dD]) delete_record "$domain" ;;
+      [tT]) RECORD_TYPE=$([ "$RECORD_TYPE" = "CNAME" ] && echo "TXT" || echo "CNAME") ;;
       [rR]) ;;
       [bB]) return 0 ;;
       [qQ]) echo -e "${GR}Goodbye!${NC}"; exit 0 ;;
@@ -136,15 +139,15 @@ manage_records() {
 add_record() {
   local domain="$1"
   clear_screen
-  print_header "Add CNAME Record"
+  print_header "Add ${RECORD_TYPE} Record"
 
   echo -n "Subdomain (e.g., www): "
   read -r name
   [ -z "$name" ] && { echo -e "${R}Name is required${NC}" >&2; pause; return 1; }
 
-  echo -n "Target (e.g., example.github.io): "
+  echo -n "Value: "
   read -r data
-  [ -z "$data" ] && { echo -e "${R}Target is required${NC}" >&2; pause; return 1; }
+  [ -z "$data" ] && { echo -e "${R}Value is required${NC}" >&2; pause; return 1; }
 
   echo -n "TTL [3600] (min 600): "
   read -r ttl
@@ -152,7 +155,7 @@ add_record() {
   [ "$ttl" -lt 600 ] 2>/dev/null && ttl=600
 
   local payload
-  payload=$(json_record "$name" "$data" "$ttl")
+  payload=$(json_record "$name" "$data" "$ttl" "$RECORD_TYPE")
   payload="[$payload]"
 
   echo -e "${C}Adding record...${NC}" >&2
@@ -183,9 +186,9 @@ edit_record() {
   [ "$count" -eq 0 ] && { echo -e "${R}No records to edit${NC}" >&2; pause; return 1; }
 
   clear_screen
-  print_header "Edit CNAME Record"
+  print_header "Edit ${RECORD_TYPE} Record"
 
-  printf "${BO}%-4s %-22s %-42s %-6s${NC}\n" "#" "Name" "Target" "TTL"
+  printf "${BO}%-4s %-22s %-42s %-6s${NC}\n" "#" "Name" "Data" "TTL"
   printf "${GR}%-74s${NC}\n" "──────────────────────────────────────────────────────────"
   for ((i = 0; i < count; i++)); do
     local ename edata ettl
@@ -217,7 +220,7 @@ edit_record() {
   read -r name
   name="${name:-$old_name}"
 
-  echo -n "Target [$old_data]: "
+  echo -n "Value [$old_data]: "
   read -r data
   data="${data:-$old_data}"
 
@@ -227,7 +230,7 @@ edit_record() {
   [ "$ttl" -lt 600 ] 2>/dev/null && ttl=600
 
   local payload
-  payload=$(json_record "$name" "$data" "$ttl")
+  payload=$(json_record "$name" "$data" "$ttl" "$RECORD_TYPE")
   payload="[$payload]"
 
   echo -e "${C}Updating record...${NC}" >&2
@@ -258,9 +261,9 @@ delete_record() {
   [ "$count" -eq 0 ] && { echo -e "${R}No records to delete${NC}" >&2; pause; return 1; }
 
   clear_screen
-  print_header "Delete CNAME Record"
+  print_header "Delete ${RECORD_TYPE} Record"
 
-  printf "${BO}%-4s %-22s %-42s %-6s${NC}\n" "#" "Name" "Target" "TTL"
+  printf "${BO}%-4s %-22s %-42s %-6s${NC}\n" "#" "Name" "Data" "TTL"
   printf "${GR}%-74s${NC}\n" "──────────────────────────────────────────────────────────"
   for ((i = 0; i < count; i++)); do
     local dname ddata dttl
@@ -290,13 +293,13 @@ delete_record() {
 
   echo -e "${C}Deleting record...${NC}" >&2
   local all_records filtered_records
-  all_records=$(api_get "/v1/domains/$domain/records/CNAME")
+  all_records=$(api_get "/v1/domains/$domain/records/$RECORD_TYPE")
   check_api_error "$all_records" || { pause; return 1; }
 
-  filtered_records=$(json_filter_out "$all_records" "$name")
+  filtered_records=$(json_filter_out "$all_records" "$name" "$RECORD_TYPE")
 
   local resp
-  resp=$(api_put "/v1/domains/$domain/records/CNAME" "$filtered_records")
+  resp=$(api_put "/v1/domains/$domain/records/$RECORD_TYPE" "$filtered_records")
 
   if [ -z "$resp" ]; then
     echo -e "${G}Record deleted successfully${NC}"

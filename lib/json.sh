@@ -19,12 +19,12 @@ json_field_at() {
 }
 
 json_record() {
-  local name="$1" data="$2" ttl="$3"
-  printf '{"name":"%s","data":"%s","ttl":%d,"type":"CNAME"}' "$name" "$data" "$ttl"
+  local name="$1" data="$2" ttl="$3" type="${4:-CNAME}"
+  printf '{"name":"%s","data":"%s","ttl":%d,"type":"%s"}' "$name" "$data" "$ttl" "$type"
 }
 
 json_filter_out() {
-  local json="$1" exclude_name="$2"
+  local json="$1" exclude_name="$2" type="${3:-CNAME}"
   if command -v jq &>/dev/null; then
     echo "$json" | jq -c "map(select(.name != \"$exclude_name\"))"
   else
@@ -40,10 +40,10 @@ json_filter_out() {
       [ "$t" = "0" ] || [ -z "$t" ] && t=3600
       [ "$n" = "$exclude_name" ] && continue
       if $first; then
-        new_json=$(json_record "$n" "$d" "$t")
+        new_json=$(json_record "$n" "$d" "$t" "$type")
         first=false
       else
-        new_json="$new_json,$(json_record "$n" "$d" "$t")"
+        new_json="$new_json,$(json_record "$n" "$d" "$t" "$type")"
       fi
     done
     echo "[$new_json]"
