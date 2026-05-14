@@ -6,6 +6,7 @@ WORKDIR /app
 
 COPY godaddy-cname.sh .
 COPY .example.env .
+COPY lib/ lib/
 
 RUN chmod +x godaddy-cname.sh && \
     sed -i 's/\r$//' godaddy-cname.sh

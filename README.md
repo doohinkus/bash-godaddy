@@ -55,6 +55,17 @@ Get credentials at: https://developer.godaddy.com/keys
 - Delete records — confirmation prompt, GET+PUT filter removal
 - All API errors displayed inline with GoDaddy error messages
 
+## Project Structure
+
+```text
+godaddy-cname.sh          # Main entry point (orchestrates TUI flow)
+lib/
+├── json.sh               # JSON parsing helpers (jq + grep/sed fallback)
+├── api.sh                # GoDaddy API communication (GET, PATCH, PUT)
+├── ui.sh                 # Terminal UI helpers (colors, prompts, menus)
+└── credentials.sh        # API credential management (.env + interactive)
+```
+
 ## Requirements
 
 - Docker (recommended — works on any OS), **or**
