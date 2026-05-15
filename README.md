@@ -1,6 +1,8 @@
 # godaddy-cname
 
-![godaddy-cname demo](godaddy-demo.gif)
+| Adding CNAME + TXT records | Deleting CNAME + TXT records |
+|---------------------------|------------------------------|
+| ![add demo](add-records.gif) | ![delete demo](delete-records.gif) |
 
 Manage GoDaddy DNS records (CNAME, TXT) from the terminal.
 
